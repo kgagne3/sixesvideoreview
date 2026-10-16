@@ -41,7 +41,7 @@ aside h1 { font-size: 16px; margin: 0 0 2px; }
 /* main */
 main { display: grid; grid-template-rows: auto 1fr; overflow: hidden; }
 .stage { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; padding: 14px 16px; border-bottom: 1px solid var(--line); background: var(--panel); }
-.player { position: relative; aspect-ratio: 16/9; background: #000; border-radius: 10px; overflow: hidden; max-height: 52vh; }
+.player { position: relative; aspect-ratio: 16/9; background: #000; border-radius: 10px; overflow: hidden; max-height: 64vh; }
 .player > * { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
 .player .empty { display: grid; place-items: center; color: var(--dim); }
 .info h2 { margin: 0 0 4px; font-size: 18px; }
@@ -73,6 +73,16 @@ main { display: grid; grid-template-rows: auto 1fr; overflow: hidden; }
 .src.yt { background: #e5534b22; color: #ff7b72; } .src.local { background: var(--panel2); color: var(--dim); } .src.missing { color: var(--red); }
 .none { padding: 40px; text-align: center; color: var(--dim); }
 kbd { font: 11px ui-monospace, monospace; border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; }
+
+/* theater: no filter column, video as large as the window allows (YouTube picks quality by player size) */
+body.theater .app { grid-template-columns: 1fr; }
+body.theater aside { display: none; }
+body.theater .stage { grid-template-columns: 1fr; }
+body.theater .player { max-height: none; width: min(100%, calc((100vh - 150px) * 16 / 9)); justify-self: center; }
+body.theater .info dl, body.theater .info .note { display: none; }
+body.theater .info { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 16px; }
+body.theater .info h2 { margin: 0; }
+body.theater .info .meta { margin: 0; }
 
 @media (max-width: 900px) {
   .app { grid-template-columns: 1fr; height: auto; }
@@ -108,7 +118,7 @@ kbd { font: 11px ui-monospace, monospace; border: 1px solid var(--line); border-
           <option value="country">Team</option>
           <option value="date">Newest first</option>
         </select></label>
-        <span><kbd>↑</kbd><kbd>↓</kbd> move <kbd>space</kbd> pause</span>
+        <span><kbd>↑</kbd><kbd>↓</kbd> move <kbd>space</kbd> pause <kbd>t</kbd> theater</span>
       </div>
       <div class="listwrap" id="listwrap"><ul class="list" id="list"></ul></div>
     </div>
@@ -259,10 +269,19 @@ function renderInfo(r) {
     <div class="ctrl">
       <button id="prev">◀ Prev</button><button id="next">Next ▶</button>
       <button id="auto" class="${autoplay ? "on" : ""}">Autoplay ${autoplay ? "on" : "off"}</button>
+      <button id="theater" class="${document.body.classList.contains("theater") ? "on" : ""}">Theater</button>
       ${yt ? `<button id="copy" data-u="${yt}">Copy YouTube link</button>` : ""}
       ${r.replay ? `<a href="${esc(r.replay)}" target="_blank" rel="noopener">Full replay</a>` : ""}
     </div>`;
 }
+
+function toggleTheater(on) {
+  on = on ?? !document.body.classList.contains("theater");
+  document.body.classList.toggle("theater", on);
+  try { localStorage.setItem("wlsq-theater", on ? "1" : ""); } catch (e) {}
+  if (view[cur]) renderInfo(view[cur]);
+}
+try { if (localStorage.getItem("wlsq-theater")) document.body.classList.add("theater"); } catch (e) {}
 
 function step(d) { if (view.length) play(Math.max(0, Math.min(view.length - 1, (cur < 0 ? -1 : cur) + d))); }
 
@@ -302,11 +321,13 @@ $("#info").addEventListener("click", e => {
   if (e.target.id === "prev") step(-1);
   if (e.target.id === "next") step(1);
   if (e.target.id === "auto") { autoplay = !autoplay; renderInfo(view[cur]); }
+  if (e.target.id === "theater") toggleTheater();
   if (e.target.id === "copy") { navigator.clipboard.writeText(e.target.dataset.u); e.target.textContent = "Copied"; }
 });
 document.addEventListener("keydown", e => {
   if (e.target.tagName === "INPUT" || e.target.tagName === "SELECT") { if (e.key === "Escape") e.target.blur(); return; }
   if (e.key === "/") { e.preventDefault(); $("#q").focus(); }
+  else if (e.key === "t") toggleTheater();
   else if (e.key === "ArrowDown" || e.key === "j") { e.preventDefault(); step(1); }
   else if (e.key === "ArrowUp" || e.key === "k") { e.preventDefault(); step(-1); }
   else if (e.key === " ") {
