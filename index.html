@@ -26,6 +26,11 @@ aside h1 { font-size: 16px; margin: 0 0 2px; }
 .facet-h { display: flex; justify-content: space-between; align-items: baseline; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--dim); margin-bottom: 4px; cursor: pointer; user-select: none; }
 .facet-h .clr { text-transform: none; letter-spacing: 0; color: var(--accent); cursor: pointer; visibility: hidden; }
 .facet.on .facet-h .clr { visibility: visible; }
+.facet-h .tw { display: inline-block; width: 12px; color: var(--dim); }
+.facet-h .pick { text-transform: none; letter-spacing: 0; color: var(--text); margin-left: 4px; }
+.facet.closed .opts { display: none; }
+.opt .lbl { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.opt .lbl small { color: var(--dim); font-size: 12px; }
 .opts { display: flex; flex-direction: column; gap: 1px; max-height: 230px; overflow-y: auto; }
 .facet.chips .opts { flex-direction: row; flex-wrap: wrap; gap: 4px; max-height: none; }
 .opt { display: flex; justify-content: space-between; gap: 8px; padding: 3px 8px; border-radius: 6px; cursor: pointer; user-select: none; }
@@ -46,9 +51,13 @@ main { display: grid; grid-template-rows: auto 1fr; overflow: hidden; }
 .player .empty { display: grid; place-items: center; color: var(--dim); }
 .info h2 { margin: 0 0 4px; font-size: 18px; }
 .info .meta { color: var(--dim); margin-bottom: 10px; }
-.info dl { display: grid; grid-template-columns: auto 1fr; gap: 3px 10px; margin: 0 0 12px; font-size: 13px; }
+.info dl { display: none; }
+body.details .info dl { display: grid; }
+.info dl { grid-template-columns: auto 1fr; gap: 3px 10px; margin: 0 0 12px; font-size: 13px; }
 .info dt { color: var(--dim); }
 .info dd { margin: 0; }
+.info .note { display: none; }
+body.details .info .note { display: block; }
 .info .note { background: var(--panel2); border-radius: 8px; padding: 8px 10px; font-size: 13px; margin-bottom: 12px; }
 .ctrl { display: flex; flex-wrap: wrap; gap: 6px; }
 .ctrl button, .ctrl a { padding: 6px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel2); cursor: pointer; text-decoration: none; font-size: 13px; }
@@ -85,12 +94,29 @@ body.theater .info h2 { margin: 0; }
 body.theater .info .meta { margin: 0; }
 
 @media (max-width: 900px) {
-  .app { grid-template-columns: 1fr; height: auto; }
+  .app { grid-template-columns: minmax(0, 1fr); height: auto; }
+  .facet-h { font-size: 12px; padding: 6px 0; margin-bottom: 0; }
+  .facet { margin-top: 6px; }
   aside { border-right: 0; border-bottom: 1px solid var(--line); }
   main { overflow: visible; }
-  .stage { grid-template-columns: 1fr; position: sticky; top: 0; z-index: 2; }
-  .row { grid-template-columns: 14px 1fr 92px 56px; }
-  .row .c, .row .t { display: none; }
+  main { display: contents; }
+  .stage { order: 1; grid-template-columns: minmax(0, 1fr); position: sticky; top: 0; z-index: 2; gap: 8px; padding: 8px 10px; }
+  aside { order: 2; padding-bottom: 14px; }
+  .listbox { order: 3; overflow: visible !important; }
+  .player { max-height: none; }
+  .info { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; }
+  .info h2 { font-size: 16px; margin: 0; }
+  .info .meta { margin: 0; font-size: 13px; }
+  .info dl, .info .ctrl { flex-basis: 100%; }
+  .ctrl button, .ctrl a { padding: 5px 8px; font-size: 12px; }
+  #theater, .keys { display: none; }
+  .row { grid-template-columns: 14px minmax(0, 1fr) auto; grid-template-areas: "k v w" "k c t"; gap: 0 10px; padding: 7px 12px; }
+  .row .card { grid-area: k; }
+  .row .v { grid-area: v; } .row .w { grid-area: w; text-align: right; }
+  .row .c { grid-area: c; font-size: 12px; } .row .t { grid-area: t; font-size: 12px; text-align: right; max-width: 52vw; }
+  .row .src { display: none; }
+  .info .ctrl { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .ctrl button, .ctrl a { white-space: nowrap; flex: none; }
 }
 </style>
 </head>
@@ -108,7 +134,7 @@ body.theater .info .meta { margin: 0; }
       <div class="player" id="player"><div class="empty">Pick a clip</div></div>
       <div class="info" id="info"></div>
     </section>
-    <div style="display:grid;grid-template-rows:auto 1fr;overflow:hidden">
+    <div class="listbox" style="display:grid;grid-template-rows:auto 1fr;overflow:hidden">
       <div class="listbar">
         <span id="count"></span>
         <span class="sp"></span>
@@ -118,7 +144,7 @@ body.theater .info .meta { margin: 0; }
           <option value="country">Team</option>
           <option value="date">Newest first</option>
         </select></label>
-        <span><kbd>↑</kbd><kbd>↓</kbd> move <kbd>space</kbd> pause <kbd>t</kbd> theater</span>
+        <span class="keys"><kbd>↑</kbd><kbd>↓</kbd> move <kbd>space</kbd> pause <kbd>t</kbd> theater</span>
       </div>
       <div class="listwrap" id="listwrap"><ul class="list" id="list"></ul></div>
     </div>
@@ -137,7 +163,6 @@ const FACETS = [
   ["violation", "Violation"],
   ["country", "Team"],
   ["game", "Game"],
-  ["qtr", "Quarter", "chips"],
   ["source", "Plays from", "chips"],
 ].filter(([k]) => !(SITE && k === "source"));
 let ALL = [], view = [], cur = -1, autoplay = false;
@@ -147,10 +172,21 @@ const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
 const gnum = g => parseInt(String(g).replace(/\D/g, "")) || 0;
-const val = (r, k) => k === "qtr" ? (r.qtr ? (r.qtr > 4 ? "OT" : "Q" + r.qtr) : "") : r[k] || "";
+const val = (r, k) => k === "game" ? `${r.event} ${r.game}` : r[k] || "";
+const COLLAPSIBLE = new Set(["violation", "country", "game"]);
+const GAMES = {};     // "PALA W1" -> "Canada v Mexico"
+let collapsed = {};
+try { collapsed = JSON.parse(localStorage.getItem("wlsq-collapsed") || "null") || null; } catch (e) {}
+if (!collapsed) { const small = matchMedia("(max-width: 900px)").matches; collapsed = { violation: small, country: small, game: small }; }
+function optLabel(k, v) {
+  if (k !== "game") return esc(v);
+  const multi = new Set(ALL.map(r => r.event)).size > 1;
+  return `${esc(multi ? v : v.split(" ")[1])}${GAMES[v] ? ` <small>${esc(GAMES[v])}</small>` : ""}`;
+}
 
 function prep(r) {
   r.source = r.youtube ? "YouTube" : r.exists ? "Local" : "Missing";
+  if (r.team1) GAMES[`${r.event} ${r.game}`] = `${r.team1} v ${r.team2}`;
   r.hay = [r.violation, r.country, r.team1, r.team2, r.event, r.event_name, r.game, r.gender, r.card, r.notes, r.id, r.round].join(" ").toLowerCase();
   return r;
 }
@@ -173,9 +209,9 @@ function sorter(a, b) {
 }
 
 function facetOrder(k, vals) {
-  if (k === "game") return vals.sort((a, b) => a[0].localeCompare(b[0]) || gnum(a) - gnum(b));
+  if (k === "game") return vals.sort((a, b) => a.replace(/\d+$/, "").localeCompare(b.replace(/\d+$/, "")) || gnum(a) - gnum(b));
   if (k === "card") { const o = ["Green", "Yellow", "Red"]; return vals.sort((a, b) => o.indexOf(a) - o.indexOf(b)); }
-  if (k === "qtr" || k === "event" || k === "kind" || k === "gender" || k === "source") return vals.sort();
+  if (k === "event" || k === "kind" || k === "gender" || k === "source") return vals.sort();
   return vals;
 }
 
@@ -190,9 +226,11 @@ function renderFacets() {
       ? vals.sort((a, b) => (counts.get(b) || 0) - (counts.get(a) || 0) || a.localeCompare(b))
       : facetOrder(k, vals);
     const s = sel[k] || new Set();
-    return `<div class="facet ${style || ""} ${s.size ? "on" : ""}" data-k="${k}">
-      <div class="facet-h"><span>${label}</span><span class="clr" data-clr="${k}">clear</span></div>
-      <div class="opts">${vals.map(v => `<div class="opt ${s.has(v) ? "sel" : ""} ${counts.get(v) ? "" : "zero"}" data-k="${k}" data-v="${esc(v)}"><span>${esc(v)}</span><span class="n">${counts.get(v) || 0}</span></div>`).join("")}</div>
+    const fold = COLLAPSIBLE.has(k), closed = fold && collapsed[k];
+    const picked = closed && s.size ? `<span class="pick">${s.size === 1 ? optLabel(k, [...s][0]).replace(/ <small>.*$/, "") : s.size + " picked"}</span>` : "";
+    return `<div class="facet ${style || ""} ${s.size ? "on" : ""} ${closed ? "closed" : ""}" data-k="${k}">
+      <div class="facet-h" ${fold ? `data-fold="${k}"` : ""}><span>${fold ? `<span class="tw">${closed ? "▸" : "▾"}</span>` : ""}${label}${picked}</span><span class="clr" data-clr="${k}">clear</span></div>
+      <div class="opts">${vals.map(v => `<div class="opt ${s.has(v) ? "sel" : ""} ${counts.get(v) ? "" : "zero"}" data-k="${k}" data-v="${esc(v)}"><span class="lbl">${optLabel(k, v)}</span><span class="n">${counts.get(v) || 0}</span></div>`).join("")}</div>
     </div>`;
   }).join("");
   const box = $("#facets"), scrolls = [...box.querySelectorAll(".opts")].map(o => o.scrollTop);
@@ -240,7 +278,15 @@ function play(i) {
   const r = view[i];
   document.querySelectorAll(".row.cur").forEach(e => e.classList.remove("cur"));
   const row = document.querySelector(`.row[data-i="${i}"]`);
-  if (row) { row.classList.add("cur"); row.scrollIntoView({ block: "nearest" }); }
+  if (row) {
+    row.classList.add("cur");
+    const wrap = $("#listwrap");
+    if (wrap.scrollHeight > wrap.clientHeight) {   // desktop: the list scrolls on its own
+      const rt = row.offsetTop - wrap.offsetTop;
+      if (rt < wrap.scrollTop) wrap.scrollTop = rt;
+      else if (rt + row.offsetHeight > wrap.scrollTop + wrap.clientHeight) wrap.scrollTop = rt + row.offsetHeight - wrap.clientHeight;
+    }
+  }
   const box = $("#player");
   if (r.youtube) playYT(r.youtube);
   else if (r.exists) {
@@ -269,6 +315,7 @@ function renderInfo(r) {
     <div class="ctrl">
       <button id="prev">◀ Prev</button><button id="next">Next ▶</button>
       <button id="auto" class="${autoplay ? "on" : ""}">Autoplay ${autoplay ? "on" : "off"}</button>
+      <button id="details" class="${document.body.classList.contains("details") ? "on" : ""}">Details</button>
       <button id="theater" class="${document.body.classList.contains("theater") ? "on" : ""}">Theater</button>
       ${yt ? `<button id="copy" data-u="${yt}">Copy YouTube link</button>` : ""}
       ${r.replay ? `<a href="${esc(r.replay)}" target="_blank" rel="noopener">Full replay</a>` : ""}
@@ -282,6 +329,7 @@ function toggleTheater(on) {
   if (view[cur]) renderInfo(view[cur]);
 }
 try { if (localStorage.getItem("wlsq-theater")) document.body.classList.add("theater"); } catch (e) {}
+try { if (localStorage.getItem("wlsq-details")) document.body.classList.add("details"); } catch (e) {}
 
 function step(d) { if (view.length) play(Math.max(0, Math.min(view.length - 1, (cur < 0 ? -1 : cur) + d))); }
 
@@ -306,6 +354,12 @@ function loadHash() {
 $("#facets").addEventListener("click", e => {
   const clr = e.target.closest("[data-clr]");
   if (clr) { sel[clr.dataset.clr].clear(); return render(); }
+  const fold = e.target.closest("[data-fold]");
+  if (fold) {
+    collapsed[fold.dataset.fold] = !collapsed[fold.dataset.fold];
+    try { localStorage.setItem("wlsq-collapsed", JSON.stringify(collapsed)); } catch (err) {}
+    return renderFacets();
+  }
   const o = e.target.closest(".opt"); if (!o) return;
   const s = sel[o.dataset.k];
   const v = o.dataset.v;
@@ -322,6 +376,11 @@ $("#info").addEventListener("click", e => {
   if (e.target.id === "next") step(1);
   if (e.target.id === "auto") { autoplay = !autoplay; renderInfo(view[cur]); }
   if (e.target.id === "theater") toggleTheater();
+  if (e.target.id === "details") {
+    const on = document.body.classList.toggle("details");
+    try { localStorage.setItem("wlsq-details", on ? "1" : ""); } catch (err) {}
+    renderInfo(view[cur]);
+  }
   if (e.target.id === "copy") { navigator.clipboard.writeText(e.target.dataset.u); e.target.textContent = "Copied"; }
 });
 document.addEventListener("keydown", e => {
