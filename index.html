@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sixes Video Review</title>
+<style>
+:root {
+  --bg: #0f1115; --panel: #171a21; --panel2: #1e222b; --line: #2a2f3a;
+  --text: #e6e8ec; --dim: #8b93a3; --accent: #4f8cff; --accent-soft: #4f8cff22;
+  --green: #3fbf6f; --yellow: #e8c547; --red: #e5534b; --blue: #56a3f5;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body { background: var(--bg); color: var(--text); font: 14px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+button, input, select { font: inherit; color: inherit; }
+.app { display: grid; grid-template-columns: 270px 1fr; height: 100vh; }
+
+/* filters */
+aside { background: var(--panel); border-right: 1px solid var(--line); overflow-y: auto; padding: 14px 12px 40px; }
+aside h1 { font-size: 16px; margin: 0 0 2px; }
+.sub { color: var(--dim); font-size: 12px; margin-bottom: 12px; }
+#q { width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); outline: none; }
+#q:focus { border-color: var(--accent); }
+.facet { margin-top: 14px; }
+.facet-h { display: flex; justify-content: space-between; align-items: baseline; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--dim); margin-bottom: 4px; cursor: pointer; user-select: none; }
+.facet-h .clr { text-transform: none; letter-spacing: 0; color: var(--accent); cursor: pointer; visibility: hidden; }
+.facet.on .facet-h .clr { visibility: visible; }
+.opts { display: flex; flex-direction: column; gap: 1px; max-height: 230px; overflow-y: auto; }
+.facet.chips .opts { flex-direction: row; flex-wrap: wrap; gap: 4px; max-height: none; }
+.opt { display: flex; justify-content: space-between; gap: 8px; padding: 3px 8px; border-radius: 6px; cursor: pointer; user-select: none; }
+.opt:hover { background: var(--panel2); }
+.opt.sel { background: var(--accent-soft); color: #fff; box-shadow: inset 2px 0 var(--accent); }
+.facet.chips .opt { border: 1px solid var(--line); border-radius: 999px; padding: 2px 10px; }
+.facet.chips .opt.sel { border-color: var(--accent); box-shadow: none; }
+.opt .n { color: var(--dim); font-variant-numeric: tabular-nums; font-size: 12px; }
+.opt.zero { opacity: .35; }
+#reset { margin-top: 16px; width: 100%; padding: 7px; border-radius: 8px; border: 1px solid var(--line); background: none; cursor: pointer; }
+#reset:hover { border-color: var(--accent); }
+
+/* main */
+main { display: grid; grid-template-rows: auto 1fr; overflow: hidden; }
+.stage { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; padding: 14px 16px; border-bottom: 1px solid var(--line); background: var(--panel); }
+.player { position: relative; aspect-ratio: 16/9; background: #000; border-radius: 10px; overflow: hidden; max-height: 52vh; }
+.player > * { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.player .empty { display: grid; place-items: center; color: var(--dim); }
+.info h2 { margin: 0 0 4px; font-size: 18px; }
+.info .meta { color: var(--dim); margin-bottom: 10px; }
+.info dl { display: grid; grid-template-columns: auto 1fr; gap: 3px 10px; margin: 0 0 12px; font-size: 13px; }
+.info dt { color: var(--dim); }
+.info dd { margin: 0; }
+.info .note { background: var(--panel2); border-radius: 8px; padding: 8px 10px; font-size: 13px; margin-bottom: 12px; }
+.ctrl { display: flex; flex-wrap: wrap; gap: 6px; }
+.ctrl button, .ctrl a { padding: 6px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel2); cursor: pointer; text-decoration: none; font-size: 13px; }
+.ctrl button:hover, .ctrl a:hover { border-color: var(--accent); }
+.ctrl .on { border-color: var(--accent); background: var(--accent-soft); }
+
+.listbar { display: flex; align-items: center; gap: 12px; padding: 8px 16px; color: var(--dim); font-size: 13px; border-bottom: 1px solid var(--line); }
+.listbar select { background: var(--panel2); border: 1px solid var(--line); border-radius: 6px; padding: 3px 6px; }
+.listbar .sp { flex: 1; }
+.listwrap { overflow-y: auto; }
+.list { list-style: none; margin: 0; padding: 0; }
+.row { display: grid; grid-template-columns: 14px 1.5fr 1fr 150px 1.4fr 64px; gap: 12px; align-items: center; padding: 7px 16px; border-bottom: 1px solid #1b1f27; cursor: pointer; }
+.row:hover { background: var(--panel); }
+.row.cur { background: var(--accent-soft); box-shadow: inset 3px 0 var(--accent); }
+.row .v { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row .c, .row .t { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--dim); }
+.row .w { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.card { width: 10px; height: 14px; border-radius: 2px; background: var(--line); }
+.card.Green { background: var(--green); } .card.Yellow { background: var(--yellow); } .card.Red { background: var(--red); }
+.card.edu { background: var(--blue); border-radius: 50%; height: 10px; }
+.src { font-size: 11px; padding: 1px 6px; border-radius: 4px; justify-self: end; }
+.src.yt { background: #e5534b22; color: #ff7b72; } .src.local { background: var(--panel2); color: var(--dim); } .src.missing { color: var(--red); }
+.none { padding: 40px; text-align: center; color: var(--dim); }
+kbd { font: 11px ui-monospace, monospace; border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; }
+
+@media (max-width: 900px) {
+  .app { grid-template-columns: 1fr; height: auto; }
+  aside { border-right: 0; border-bottom: 1px solid var(--line); }
+  main { overflow: visible; }
+  .stage { grid-template-columns: 1fr; position: sticky; top: 0; z-index: 2; }
+  .row { grid-template-columns: 14px 1fr 92px 56px; }
+  .row .c, .row .t { display: none; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside>
+    <h1>Sixes Video Review</h1>
+    <div class="sub" id="totals">Loading…</div>
+    <input id="q" type="search" placeholder="Search  ( / )" autocomplete="off">
+    <div id="facets"></div>
+    <button id="reset">Clear all filters</button>
+  </aside>
+  <main>
+    <section class="stage">
+      <div class="player" id="player"><div class="empty">Pick a clip</div></div>
+      <div class="info" id="info"></div>
+    </section>
+    <div style="display:grid;grid-template-rows:auto 1fr;overflow:hidden">
+      <div class="listbar">
+        <span id="count"></span>
+        <span class="sp"></span>
+        <label>Sort <select id="sort">
+          <option value="game">Game order</option>
+          <option value="violation">Violation</option>
+          <option value="country">Team</option>
+          <option value="date">Newest first</option>
+        </select></label>
+        <span><kbd>↑</kbd><kbd>↓</kbd> move <kbd>space</kbd> pause</span>
+      </div>
+      <div class="listwrap" id="listwrap"><ul class="list" id="list"></ul></div>
+    </div>
+  </main>
+</div>
+
+<script>window.WLSQ_SITE = {data: "clips.json"};</script>
+<script>
+// Online copy (export_site.py sets this): data from clips.json, YouTube clips only
+const SITE = window.WLSQ_SITE || null;
+const FACETS = [
+  ["kind", "Type", "chips"],
+  ["event", "Event", "chips"],
+  ["gender", "Gender", "chips"],
+  ["card", "Card", "chips"],
+  ["violation", "Violation"],
+  ["country", "Team"],
+  ["game", "Game"],
+  ["qtr", "Quarter", "chips"],
+  ["source", "Plays from", "chips"],
+].filter(([k]) => !(SITE && k === "source"));
+let ALL = [], view = [], cur = -1, autoplay = false;
+const sel = {};       // facet -> Set
+let q = "", sort = "game";
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+const gnum = g => parseInt(String(g).replace(/\D/g, "")) || 0;
+const val = (r, k) => k === "qtr" ? (r.qtr ? (r.qtr > 4 ? "OT" : "Q" + r.qtr) : "") : r[k] || "";
+
+function prep(r) {
+  r.source = r.youtube ? "YouTube" : r.exists ? "Local" : "Missing";
+  r.hay = [r.violation, r.country, r.team1, r.team2, r.event, r.event_name, r.game, r.gender, r.card, r.notes, r.id, r.round].join(" ").toLowerCase();
+  return r;
+}
+
+function matches(r, skip) {
+  if (q && !q.split(/\s+/).every(w => r.hay.includes(w))) return false;
+  for (const [k] of FACETS) {
+    if (k === skip || !sel[k] || !sel[k].size) continue;
+    if (!sel[k].has(val(r, k))) return false;
+  }
+  return true;
+}
+
+function sorter(a, b) {
+  const byGame = (a.event + a.gender).localeCompare(b.event + b.gender) || gnum(a.game) - gnum(b.game) || (a.qtr || 0) - (b.qtr || 0) || (b.clock_secs || 0) - (a.clock_secs || 0);
+  if (sort === "violation") return a.violation.localeCompare(b.violation) || byGame;
+  if (sort === "country") return (a.country || "~").localeCompare(b.country || "~") || byGame;
+  if (sort === "date") return b.date.localeCompare(a.date) || byGame;
+  return byGame;
+}
+
+function facetOrder(k, vals) {
+  if (k === "game") return vals.sort((a, b) => a[0].localeCompare(b[0]) || gnum(a) - gnum(b));
+  if (k === "card") { const o = ["Green", "Yellow", "Red"]; return vals.sort((a, b) => o.indexOf(a) - o.indexOf(b)); }
+  if (k === "qtr" || k === "event" || k === "kind" || k === "gender" || k === "source") return vals.sort();
+  return vals;
+}
+
+function renderFacets() {
+  const html = FACETS.map(([k, label, style]) => {
+    const counts = new Map(), base = new Map();
+    for (const r of ALL) { const v = val(r, k); if (v) base.set(v, (base.get(v) || 0) + 1); }
+    for (const r of ALL) if (matches(r, k)) { const v = val(r, k); if (v) counts.set(v, (counts.get(v) || 0) + 1); }
+    let vals = [...base.keys()];
+    if (vals.length < 2 && !(sel[k] && sel[k].size)) return "";
+    vals = k === "violation" || k === "country"
+      ? vals.sort((a, b) => (counts.get(b) || 0) - (counts.get(a) || 0) || a.localeCompare(b))
+      : facetOrder(k, vals);
+    const s = sel[k] || new Set();
+    return `<div class="facet ${style || ""} ${s.size ? "on" : ""}" data-k="${k}">
+      <div class="facet-h"><span>${label}</span><span class="clr" data-clr="${k}">clear</span></div>
+      <div class="opts">${vals.map(v => `<div class="opt ${s.has(v) ? "sel" : ""} ${counts.get(v) ? "" : "zero"}" data-k="${k}" data-v="${esc(v)}"><span>${esc(v)}</span><span class="n">${counts.get(v) || 0}</span></div>`).join("")}</div>
+    </div>`;
+  }).join("");
+  const box = $("#facets"), scrolls = [...box.querySelectorAll(".opts")].map(o => o.scrollTop);
+  box.innerHTML = html;
+  box.querySelectorAll(".opts").forEach((o, i) => o.scrollTop = scrolls[i] || 0);
+}
+
+function renderList() {
+  const curRec = view[cur];
+  view = ALL.filter(r => matches(r)).sort(sorter);
+  cur = curRec ? view.indexOf(curRec) : -1;
+  $("#count").textContent = `${view.length} of ${ALL.length} clips`;
+  $("#list").innerHTML = view.length ? view.map((r, i) => `
+    <li class="row ${i === cur ? "cur" : ""}" data-i="${i}">
+      <span class="card ${r.kind === "Education" ? "edu" : esc(r.card)}" title="${esc(r.card || r.kind)}"></span>
+      <span class="v">${esc(r.violation)}</span>
+      <span class="c">${esc(r.country || r.kind)}</span>
+      <span class="w">${esc(r.event)} ${esc(r.game)} · ${r.qtr ? (r.qtr > 4 ? "OT" : "Q" + r.qtr) : ""} ${esc(r.clock)}</span>
+      <span class="t">${r.team1 ? esc(r.team1) + " v " + esc(r.team2) : ""}</span>
+      <span class="src ${r.source === "YouTube" ? "yt" : r.source === "Local" ? "local" : "missing"}">${r.source}</span>
+    </li>`).join("") : `<div class="none">No clips match these filters.</div>`;
+}
+
+function render() { renderFacets(); renderList(); saveHash(); }
+
+/* playback */
+let ytPlayer = null, ytReady = false, ytPending = null;
+window.onYouTubeIframeAPIReady = () => { ytReady = true; if (ytPending) { const p = ytPending; ytPending = null; playYT(p); } };
+function loadYTApi() {
+  if (document.getElementById("ytapi")) return;
+  const s = document.createElement("script"); s.id = "ytapi"; s.src = "https://www.youtube.com/iframe_api"; document.head.appendChild(s);
+}
+function playYT(id) {
+  if (!ytReady) { ytPending = id; loadYTApi(); return; }
+  const box = $("#player");
+  if (ytPlayer && document.getElementById("yt")) { ytPlayer.loadVideoById(id); return; }
+  box.innerHTML = `<div id="yt"></div>`;
+  ytPlayer = new YT.Player("yt", { videoId: id, playerVars: { autoplay: 1, rel: 0, modestbranding: 1, playsinline: 1 },
+    events: { onStateChange: e => { if (e.data === YT.PlayerState.ENDED && autoplay) step(1); } } });
+}
+
+function play(i) {
+  if (i < 0 || i >= view.length) return;
+  cur = i;
+  const r = view[i];
+  document.querySelectorAll(".row.cur").forEach(e => e.classList.remove("cur"));
+  const row = document.querySelector(`.row[data-i="${i}"]`);
+  if (row) { row.classList.add("cur"); row.scrollIntoView({ block: "nearest" }); }
+  const box = $("#player");
+  if (r.youtube) playYT(r.youtube);
+  else if (r.exists) {
+    ytPlayer = null;
+    box.innerHTML = `<video controls autoplay playsinline src="/file/${r.path.split("/").map(encodeURIComponent).join("/")}"></video>`;
+    box.querySelector("video").onended = () => autoplay && step(1);
+  } else { ytPlayer = null; box.innerHTML = `<div class="empty">Clip file missing: ${esc(r.file)}</div>`; }
+  renderInfo(r);
+  saveHash();
+}
+
+function renderInfo(r) {
+  const q = r.qtr ? (r.qtr > 4 ? "OT" : "Q" + r.qtr) + " " + r.clock : "";
+  const yt = r.youtube ? `https://youtu.be/${r.youtube}` : "";
+  $("#info").innerHTML = `
+    <h2>${esc(r.violation)}</h2>
+    <div class="meta">${esc([r.country, r.card && r.card + " card", r.kind === "Education" && "Education"].filter(Boolean).join(" · "))}</div>
+    <dl>
+      <dt>Event</dt><dd>${esc(r.event_name)}</dd>
+      <dt>Game</dt><dd>${esc(r.gender)} ${esc(r.game)}${r.round ? ", " + esc(r.round) : ""}</dd>
+      ${r.team1 ? `<dt>Teams</dt><dd>${esc(r.team1)} v ${esc(r.team2)}${r.score ? " (" + esc(r.score) + ")" : ""}</dd>` : ""}
+      <dt>When</dt><dd>${esc(q)}${r.date ? " · " + esc(r.date) : ""}</dd>
+      <dt>ID</dt><dd>${esc(r.id)}</dd>
+    </dl>
+    ${r.notes ? `<div class="note">${esc(r.notes)}</div>` : ""}
+    <div class="ctrl">
+      <button id="prev">◀ Prev</button><button id="next">Next ▶</button>
+      <button id="auto" class="${autoplay ? "on" : ""}">Autoplay ${autoplay ? "on" : "off"}</button>
+      ${yt ? `<button id="copy" data-u="${yt}">Copy YouTube link</button>` : ""}
+      ${r.replay ? `<a href="${esc(r.replay)}" target="_blank" rel="noopener">Full replay</a>` : ""}
+    </div>`;
+}
+
+function step(d) { if (view.length) play(Math.max(0, Math.min(view.length - 1, (cur < 0 ? -1 : cur) + d))); }
+
+/* state in the URL hash */
+function saveHash() {
+  const p = new URLSearchParams();
+  if (q) p.set("q", q);
+  if (sort !== "game") p.set("sort", sort);
+  for (const k in sel) if (sel[k].size) p.set(k, [...sel[k]].join("|"));
+  if (view[cur]) p.set("clip", view[cur].id);
+  history.replaceState(null, "", "#" + p.toString());
+}
+function loadHash() {
+  const p = new URLSearchParams(location.hash.slice(1));
+  q = p.get("q") || ""; $("#q").value = q;
+  sort = p.get("sort") || "game"; $("#sort").value = sort;
+  for (const [k] of FACETS) sel[k] = new Set(p.get(k) ? p.get(k).split("|") : []);
+  return p.get("clip");
+}
+
+/* events */
+$("#facets").addEventListener("click", e => {
+  const clr = e.target.closest("[data-clr]");
+  if (clr) { sel[clr.dataset.clr].clear(); return render(); }
+  const o = e.target.closest(".opt"); if (!o) return;
+  const s = sel[o.dataset.k];
+  const v = o.dataset.v;
+  if (e.metaKey || e.shiftKey) { s.has(v) ? s.delete(v) : s.add(v); }
+  else if (s.has(v)) s.delete(v); else { s.add(v); }
+  render();
+});
+$("#q").addEventListener("input", e => { q = e.target.value.trim().toLowerCase(); render(); });
+$("#sort").addEventListener("change", e => { sort = e.target.value; render(); });
+$("#reset").addEventListener("click", () => { for (const k in sel) sel[k].clear(); q = ""; $("#q").value = ""; render(); });
+$("#list").addEventListener("click", e => { const r = e.target.closest(".row"); if (r) play(+r.dataset.i); });
+$("#info").addEventListener("click", e => {
+  if (e.target.id === "prev") step(-1);
+  if (e.target.id === "next") step(1);
+  if (e.target.id === "auto") { autoplay = !autoplay; renderInfo(view[cur]); }
+  if (e.target.id === "copy") { navigator.clipboard.writeText(e.target.dataset.u); e.target.textContent = "Copied"; }
+});
+document.addEventListener("keydown", e => {
+  if (e.target.tagName === "INPUT" || e.target.tagName === "SELECT") { if (e.key === "Escape") e.target.blur(); return; }
+  if (e.key === "/") { e.preventDefault(); $("#q").focus(); }
+  else if (e.key === "ArrowDown" || e.key === "j") { e.preventDefault(); step(1); }
+  else if (e.key === "ArrowUp" || e.key === "k") { e.preventDefault(); step(-1); }
+  else if (e.key === " ") {
+    e.preventDefault();
+    const v = document.querySelector("#player video");
+    if (v) v.paused ? v.play() : v.pause();
+    else if (ytPlayer && ytPlayer.getPlayerState) ytPlayer.getPlayerState() === 1 ? ytPlayer.pauseVideo() : ytPlayer.playVideo();
+  }
+});
+
+fetch(SITE ? SITE.data : "/api/clips").then(r => r.json()).then(data => {
+  ALL = (SITE ? data.filter(r => r.youtube) : data).map(prep);
+  const yt = ALL.filter(r => r.youtube).length;
+  $("#totals").textContent = SITE ? `${ALL.length} clips` : `${ALL.length} clips · ${yt} on YouTube · ${ALL.length - yt} local`;
+  const clip = loadHash();
+  render();
+  if (ALL.some(r => r.youtube)) loadYTApi();
+  if (clip) { const i = view.findIndex(r => r.id === clip); if (i >= 0) play(i); }
+});
+</script>
+</body>
+</html>
