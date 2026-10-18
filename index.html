@@ -151,7 +151,7 @@ body.theater .info .meta { margin: 0; }
   </main>
 </div>
 
-<script>window.WLSQ_SITE = {data: "clips.json"};</script>
+<script>window.WLSQ_SITE = {data: "clips.json", version: "SVR1.0"};</script>
 <script>
 // Online copy (export_site.py sets this): data from clips.json, YouTube clips only
 const SITE = window.WLSQ_SITE || null;
@@ -400,7 +400,7 @@ document.addEventListener("keydown", e => {
 fetch(SITE ? SITE.data : "/api/clips").then(r => r.json()).then(data => {
   ALL = (SITE ? data.filter(r => r.youtube) : data).map(prep);
   const yt = ALL.filter(r => r.youtube).length;
-  $("#totals").textContent = SITE ? `${ALL.length} clips` : `${ALL.length} clips · ${yt} on YouTube · ${ALL.length - yt} local`;
+  $("#totals").textContent = SITE ? `${SITE.version ? SITE.version + " · " : ""}${ALL.length} clips` : `${ALL.length} clips · ${yt} on YouTube · ${ALL.length - yt} local`;
   const clip = loadHash();
   render();
   if (ALL.some(r => r.youtube)) loadYTApi();
